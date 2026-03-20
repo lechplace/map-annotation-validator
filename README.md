@@ -193,3 +193,106 @@ Współrzędne w CSV są pikselowe względem oryginalnego TIFF. Jeśli plik jest
 - `scikit-learn` — podział train/val, stratified split
 - `scipy` — NMS przez `label` z `ndimage`
 - `matplotlib` — generowanie heatmap
+
+---
+
+## API (FastAPI)
+
+### Uruchomienie lokalnie
+
+```bash
+uv run uvicorn app.main:app --reload --port 8080
+```
+
+### Endpoint `POST /detect`
+
+Przyjmuje plik TIFF, zwraca archiwum ZIP z wynikami.
+
+```bash
+curl -X POST http://localhost:8080/detect \
+  -F "file=@dane-mapa/N-34-137-B-d-3.tif" \
+  -F "threshold=0.5" \
+  -F "stride=32" \
+  -o results.zip
+```
+
+| Parametr | Typ | Domyślnie | Opis |
+|---|---|---|---|
+| `file` | TIFF (multipart) | — | Mapa rastrowa do analizy |
+| `threshold` | float 0–1 | `0.5` | Próg pewności modelu |
+| `stride` | int 8–128 | `32` | Krok sliding window (px) |
+
+**Odpowiedź:** `application/zip` zawierający:
+- `heatmap.png` — nakładka termiczna na mapę
+- `detections.csv` — `x, y, w, h, confidence` każdej detekcji
+
+### Inne endpointy
+
+| Endpoint | Opis |
+|---|---|
+| `GET /` | Info o serwisie |
+| `GET /health` | Health check (używany przez Cloud Run) |
+| `GET /docs` | Swagger UI |
+
+---
+
+## Deploy — Google Cloud Run
+
+### Wymagania wstępne
+
+```bash
+gcloud auth login
+gcloud config set project TWOJ_PROJEKT
+```
+
+Utwórz repozytorium w Artifact Registry (raz):
+```bash
+gcloud artifacts repositories create docker-repo \
+  --repository-format=docker \
+  --location=europe-central2
+```
+
+Wgraj wytrenowany model do GCS (raz po treningu):
+```bash
+gsutil cp models/best_model.pt gs://TWOJ_PROJEKT-models/map-annotation/best_model.pt
+```
+
+### Deploy
+
+```bash
+GCP_PROJECT=twoj-projekt-gcp ./deploy.sh
+```
+
+Skrypt automatycznie:
+1. Buduje obraz Docker (`linux/amd64`)
+2. Pushuje do Artifact Registry
+3. Deployuje na Cloud Run z `--no-allow-unauthenticated`
+
+### Wywołanie produkcyjnego API
+
+```bash
+# Pobierz token
+TOKEN=$(gcloud auth print-identity-token)
+
+curl -X POST https://CLOUD_RUN_URL/detect \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -F "file=@mapa.tif" \
+  -o results.zip
+```
+
+### Zasoby Cloud Run
+
+| Parametr | Wartość |
+|---|---|
+| Pamięć | 2 GB |
+| CPU | 2 vCPU |
+| Timeout | 300 s |
+| Max instancji | 3 |
+| Port | 8080 |
+
+### Zmienne środowiskowe
+
+| Zmienna | Opis |
+|---|---|
+| `MODEL_GCS_URI` | `gs://bucket/path/best_model.pt` — model ładowany z GCS |
+| `MODEL_PATH` | Lokalny fallback gdy brak GCS URI |

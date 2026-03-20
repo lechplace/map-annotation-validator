@@ -1,0 +1,15 @@
+.venv/
+.git/
+.DS_Store
+__pycache__/
+*.py[oc]
+*.egg-info/
+
+# Dane treningowe i TIFF — nie wchodzą do obrazu
+dane-mapa/
+notebooks/
+output/
+
+# Model jest ładowany z GCS lub kopiowany osobno
+# Odkomentuj jeśli chcesz bundlować model w obrazie:
+# models/
