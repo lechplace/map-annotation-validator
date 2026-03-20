@@ -1,0 +1,27 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# macOS
+.DS_Store
+
+# Duże pliki danych i wygenerowane patche
+dane-mapa/patches/
+dane-mapa/*.tif
+dane-mapa/*.tiff
+
+# Wagi modeli
+models/
+
+# Wyniki inferencji
+output/
+
+# Numpy cache
+*.npy
