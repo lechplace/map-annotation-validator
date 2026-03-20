@@ -240,21 +240,65 @@ curl -X POST http://localhost:8080/detect \
 
 ### Wymagania wstępne
 
+#### 1. Zaloguj się i ustaw projekt
+
 ```bash
 gcloud auth login
+gcloud auth configure-docker europe-central2-docker.pkg.dev
 gcloud config set project TWOJ_PROJEKT
 ```
 
-Utwórz repozytorium w Artifact Registry (raz):
+#### 2. Włącz wymagane API (raz na projekt)
+
+```bash
+gcloud services enable \
+  artifactregistry.googleapis.com \
+  run.googleapis.com \
+  storage.googleapis.com \
+  cloudbuild.googleapis.com \
+  --project=TWOJ_PROJEKT
+```
+
+#### 3. Utwórz bucket na modele (raz)
+
+```bash
+gsutil mb -l europe-central2 gs://TWOJ_PROJEKT-models
+```
+
+Wgraj wytrenowany model:
+```bash
+gsutil cp models/best_model.pt gs://TWOJ_PROJEKT-models/map-annotation/best_model.pt
+```
+
+Sprawdź że plik jest dostępny:
+```bash
+gsutil ls gs://TWOJ_PROJEKT-models/map-annotation/
+```
+
+#### 4. Utwórz repozytorium w Artifact Registry (raz)
+
 ```bash
 gcloud artifacts repositories create docker-repo \
   --repository-format=docker \
-  --location=europe-central2
+  --location=europe-central2 \
+  --project=TWOJ_PROJEKT
 ```
 
-Wgraj wytrenowany model do GCS (raz po treningu):
+#### 5. Uprawnienia Service Account dla Cloud Run
+
+Cloud Run potrzebuje dostępu do GCS żeby pobrać model przy starcie:
+
 ```bash
-gsutil cp models/best_model.pt gs://TWOJ_PROJEKT-models/map-annotation/best_model.pt
+# Pobierz domyślny service account Cloud Run
+SA=$(gcloud iam service-accounts list \
+  --filter="displayName:Compute Engine default" \
+  --format="value(email)" \
+  --project=TWOJ_PROJEKT)
+
+# Nadaj dostęp do odczytu z GCS
+gcloud projects add-iam-policy-binding TWOJ_PROJEKT \
+  --member="serviceAccount:${SA}" \
+  --role="roles/storage.objectViewer"
 ```
 
 ### Deploy
