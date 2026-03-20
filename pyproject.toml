@@ -12,6 +12,7 @@ dependencies = [
     "numpy>=2.4.3",
     "opencv-python>=4.13.0.92",
     "pillow>=12.1.1",
+    "google-cloud-storage>=2.19.0",
     "python-dotenv>=1.2.2",
     "python-multipart>=0.0.22",
     "rasterio>=1.4.4",
