@@ -12,6 +12,14 @@
 
 set -euo pipefail
 
+# ── Załaduj .env jeśli istnieje ───────────────────────────────────────────────
+if [ -f .env ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
+fi
+
 # ── Konfiguracja — dostosuj do swojego projektu GCP ──────────────────────────
 GCP_PROJECT="${GCP_PROJECT:-twoj-projekt-gcp}"
 GCP_REGION="${GCP_REGION:-europe-central2}"          # Warszawa
