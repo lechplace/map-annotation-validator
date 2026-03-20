@@ -324,6 +324,31 @@ curl -X POST https://CLOUD_RUN_URL/detect \
   -o results.zip
 ```
 
+### Sprawdzanie logów Cloud Run
+
+```bash
+# Ostatnie 50 logów
+gcloud logging read \
+  "resource.type=cloud_run_revision AND resource.labels.service_name=map-annotation-validator" \
+  --project=$GCP_PROJECT \
+  --limit=50 \
+  --format="value(textPayload)"
+
+# Tylko błędy
+gcloud logging read \
+  "resource.type=cloud_run_revision AND resource.labels.service_name=map-annotation-validator AND severity>=ERROR" \
+  --project=$GCP_PROJECT \
+  --limit=20 \
+  --format="value(textPayload)"
+
+# Stream logów na żywo (podczas deployu)
+gcloud beta run services logs tail map-annotation-validator \
+  --project=$GCP_PROJECT \
+  --region=europe-central2
+```
+
+---
+
 ### Zasoby Cloud Run
 
 | Parametr | Wartość |
